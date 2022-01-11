@@ -1,0 +1,49 @@
+# This file is auto generated from it's template,
+# see citusdata/tools/packaging_automation/templates/docker/latest/docker-compose.tmpl.yml.
+version: "3"
+
+networks:
+  postgis_dist:
+    driver: overlay
+services:
+  master:
+    image: "kwon/citusgis14:latest"
+    ports: ["${COORDINATOR_EXTERNAL_PORT:-5432}:5432"]
+    labels: ["com.citusdata.role=Master", "com.docker.compose.project=postis-citus"]
+    environment: &AUTH
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      PGUSER: "${POSTGRES_USER:-postgres}"
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_HOST_AUTH_METHOD: "${POSTGRES_HOST_AUTH_METHOD:-trust}"
+    networks:
+      - postgis_dist
+    volumes:
+      - master:/var/lib/postgresql/data   
+  worker:
+    image: "kwon/citusgis14:latest"
+    labels: ["com.citusdata.role=Worker", "com.docker.compose.project=postis-citus"]
+    depends_on: [manager]
+    environment: *AUTH
+    command: "/wait-for-manager.sh"
+    networks:
+      - postgis_dist
+    volumes:
+      - worker:/var/lib/postgresql/data
+      - healthcheck-volume:/healthcheck
+  manager:
+    image: "citusdata/membership-manager:0.3.0"
+    labels: ["com.docker.compose.project=postis-citus"]
+    volumes:
+      - "${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock"
+      - healthcheck-volume:/healthcheck
+    depends_on: [master]
+    environment: *AUTH
+    networks:
+      - postgis_dist
+    deploy:
+      mode: global
+volumes:
+  master:
+  worker:
+  healthcheck-volume:
