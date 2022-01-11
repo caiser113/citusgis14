@@ -7,7 +7,7 @@ networks:
     driver: overlay
 services:
   master:
-    image: "kwon/citusgis14:latest"
+    image: "caiser13/citusgis14:1.0"
     ports: ["${COORDINATOR_EXTERNAL_PORT:-5432}:5432"]
     labels: ["com.citusdata.role=Master", "com.docker.compose.project=postis-citus"]
     environment: &AUTH
@@ -21,7 +21,7 @@ services:
     volumes:
       - master:/var/lib/postgresql/data   
   worker:
-    image: "kwon/citusgis14:latest"
+    image: "caiser13/citusgis14:1.0"
     labels: ["com.citusdata.role=Worker", "com.docker.compose.project=postis-citus"]
     depends_on: [manager]
     environment: *AUTH
